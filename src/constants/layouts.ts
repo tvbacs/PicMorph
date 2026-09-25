@@ -6,7 +6,6 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
     name: '4 Ô 2x2',
     subtitle: 'Lưới 4 ô',
     slotsCount: 4,
-    isFeatured: true,
     slots: [
       { id: 0, left: 0, top: 0, width: 50, height: 50 },
       { id: 1, left: 50, top: 0, width: 50, height: 50 },

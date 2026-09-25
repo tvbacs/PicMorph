@@ -33,12 +33,6 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
               style={[styles.card, isSelected && styles.activeCard]}
               onPress={() => onSelectLayout(layout)}
             >
-              {layout.isFeatured && (
-                <View style={styles.hotBadge}>
-                  <Text style={styles.hotText}>HOT</Text>
-                </View>
-              )}
-
               {/* Mini visual representation of the grid */}
               <View style={styles.miniGridFrame}>
                 {layout.slots.map((slot, idx) => (
@@ -51,7 +45,7 @@ export const LayoutSelector: React.FC<LayoutSelectorProps> = ({
                         top: `${slot.top}%`,
                         width: `${slot.width}%`,
                         height: `${slot.height}%`,
-                        backgroundColor: isSelected ? '#3B82F6' : '#52525B',
+                        backgroundColor: isSelected ? '#D4D4D8' : '#52525B',
                       },
                     ]}
                   />
@@ -106,28 +100,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 8,
     alignItems: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: '#2D2D36',
     position: 'relative',
   },
   activeCard: {
-    borderColor: '#3B82F6',
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
-  },
-  hotBadge: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#EF4444',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 6,
-    zIndex: 10,
-  },
-  hotText: {
-    color: '#FFFFFF',
-    fontSize: 8,
-    fontWeight: '900',
+    borderColor: '#D4D4D8',
+    borderWidth: 1,
+    backgroundColor: '#262630',
   },
   miniGridFrame: {
     width: 44,

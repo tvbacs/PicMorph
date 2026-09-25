@@ -112,12 +112,12 @@ export const DraftsModal: React.FC<DraftsModalProps> = ({
               activeOpacity={0.7}
             >
               {isSavingCurrent ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <ActivityIndicator size="small" color="#16161B" />
               ) : (
                 <Ionicons
                   name="bookmark-outline"
                   size={18}
-                  color={hasContent ? '#FFFFFF' : '#71717A'}
+                  color={hasContent ? '#16161B' : '#71717A'}
                 />
               )}
             </TouchableOpacity>
@@ -126,7 +126,7 @@ export const DraftsModal: React.FC<DraftsModalProps> = ({
           {/* Body Content */}
           {isLoading ? (
             <View style={styles.loadingWrap}>
-              <ActivityIndicator size="large" color="#3B82F6" />
+              <ActivityIndicator size="large" color="#FFFFFF" />
             </View>
           ) : drafts.length === 0 ? (
             <View style={styles.emptyWrap}>
@@ -163,7 +163,7 @@ export const DraftsModal: React.FC<DraftsModalProps> = ({
           ) : (
             <ScrollView
               style={styles.draftListScroll}
-              showsVerticalScrollIndicator={false}
+              showsVerticalScrollIndicator={true}
               contentContainerStyle={styles.draftListContent}
             >
               {drafts.map((item) => {
@@ -251,9 +251,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 18,
     paddingTop: 16,
-    paddingBottom: 32,
-    maxHeight: '85%',
-    minHeight: 380,
+    paddingBottom: 24,
+    height: '80%',
   },
   header: {
     flexDirection: 'row',
@@ -280,7 +279,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   saveHeaderBtn: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#FFFFFF',
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -301,9 +300,10 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyWrap: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 40,
+    paddingVertical: 20,
     paddingHorizontal: 20,
   },
   emptyIconCircle: {
@@ -339,19 +339,20 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#3B82F6',
+    borderColor: '#3F3F46',
   },
   emptyActionText: {
-    color: '#60A5FA',
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
   },
   draftListScroll: {
+    flex: 1,
     marginTop: 12,
   },
   draftListContent: {
     gap: 10,
-    paddingBottom: 20,
+    paddingBottom: 30,
   },
   draftCard: {
     flexDirection: 'row',

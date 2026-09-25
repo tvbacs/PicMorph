@@ -83,7 +83,7 @@ export const CellItem: React.FC<CellItemProps> = ({
           <View style={styles.emptyIconCircle}>
             <Ionicons name="image-outline" size={28} color="#71717A" />
             <View style={styles.emptyPlusBadge}>
-              <Ionicons name="add" size={12} color="#FFFFFF" />
+              <Ionicons name="add" size={12} color="#16161B" />
             </View>
           </View>
         </View>
@@ -100,8 +100,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#16161B',
   },
   selectedBorder: {
-    borderColor: '#3B82F6',
-    borderWidth: 2.5,
+    borderColor: '#FFFFFF',
+    borderWidth: 2,
   },
   imageWrapper: {
     width: '100%',
@@ -120,9 +120,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#1C1C22',
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: '#2D2D36',
   },
   emptyIconCircle: {
     width: 48,
@@ -132,8 +129,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    borderWidth: 1,
-    borderColor: '#32323D',
   },
   emptyPlusBadge: {
     position: 'absolute',
@@ -142,7 +137,7 @@ const styles = StyleSheet.create({
     width: 17,
     height: 17,
     borderRadius: 8.5,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },

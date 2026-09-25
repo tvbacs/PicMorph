@@ -102,26 +102,34 @@ export default function App() {
   const MAX_CANVAS_W = Math.min(SCREEN_WIDTH - 28, 360);
   const MAX_CANVAS_H = 460;
 
-  if (targetRatio === 1) {
-    // 1:1 Square
+  if (!isFullScreen) {
+    // Chế độ Ảnh vuông -> Canvas vuông 1:1, ảnh xuất ra chuẩn vuông, không có dải đen trên dưới
     const size = Math.min(MAX_CANVAS_W, 350);
     canvasDisplayWidth = size;
     canvasDisplayHeight = size;
-  } else if (targetRatio < 1) {
-    // Portrait (9:16, 3:4, 5.8")
-    canvasDisplayHeight = MAX_CANVAS_H;
-    canvasDisplayWidth = Math.round(canvasDisplayHeight * targetRatio);
-    if (canvasDisplayWidth > MAX_CANVAS_W) {
+  } else {
+    // Chế độ Full chiều dài -> Canvas theo tỷ lệ khung hình đã chọn
+    if (targetRatio === 1) {
+      // 1:1 Square
+      const size = Math.min(MAX_CANVAS_W, 350);
+      canvasDisplayWidth = size;
+      canvasDisplayHeight = size;
+    } else if (targetRatio < 1) {
+      // Portrait (9:16, 3:4, 5.8")
+      canvasDisplayHeight = MAX_CANVAS_H;
+      canvasDisplayWidth = Math.round(canvasDisplayHeight * targetRatio);
+      if (canvasDisplayWidth > MAX_CANVAS_W) {
+        canvasDisplayWidth = MAX_CANVAS_W;
+        canvasDisplayHeight = Math.round(canvasDisplayWidth / targetRatio);
+      }
+    } else {
+      // Landscape (16:9, 4:3, 2:1, 2.35:1, 1.85:1)
       canvasDisplayWidth = MAX_CANVAS_W;
       canvasDisplayHeight = Math.round(canvasDisplayWidth / targetRatio);
-    }
-  } else {
-    // Landscape (16:9, 4:3, 2:1, 2.35:1, 1.85:1)
-    canvasDisplayWidth = MAX_CANVAS_W;
-    canvasDisplayHeight = Math.round(canvasDisplayWidth / targetRatio);
-    if (canvasDisplayHeight > 340) {
-      canvasDisplayHeight = 340;
-      canvasDisplayWidth = Math.round(canvasDisplayHeight * targetRatio);
+      if (canvasDisplayHeight > 340) {
+        canvasDisplayHeight = 340;
+        canvasDisplayWidth = Math.round(canvasDisplayHeight * targetRatio);
+      }
     }
   }
 
@@ -333,7 +341,7 @@ export default function App() {
             activeOpacity={0.7}
           >
             {isSavingDraft ? (
-              <ActivityIndicator size="small" color="#3B82F6" />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Ionicons
                 name="bookmark-outline"
@@ -363,12 +371,12 @@ export default function App() {
             activeOpacity={0.7}
           >
             {isExporting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color="#16161B" />
             ) : (
               <Ionicons
                 name="download-outline"
                 size={22}
-                color={hasContent ? '#FFFFFF' : '#52525B'}
+                color={hasContent ? '#16161B' : '#52525B'}
               />
             )}
           </TouchableOpacity>
@@ -423,7 +431,10 @@ export default function App() {
               styles.screenToggleBtn,
               !isFullScreen && styles.activeScreenToggleBtn,
             ]}
-            onPress={() => setIsFullScreen(false)}
+            onPress={() => {
+              setIsFullScreen(false);
+              setCurrentRatioId('1:1');
+            }}
           >
             <Text
               style={[
@@ -440,7 +451,12 @@ export default function App() {
               styles.screenToggleBtn,
               isFullScreen && styles.activeScreenToggleBtn,
             ]}
-            onPress={() => setIsFullScreen(true)}
+            onPress={() => {
+              setIsFullScreen(true);
+              if (currentRatioId === '1:1') {
+                setCurrentRatioId('9:16');
+              }
+            }}
           >
             <Text
               style={[
@@ -456,7 +472,14 @@ export default function App() {
         {/* CapCut-style Aspect Ratio Selector */}
         <RatioSelector
           currentRatioId={currentRatioId}
-          onSelectRatio={(newRatio) => setCurrentRatioId(newRatio)}
+          onSelectRatio={(newRatio) => {
+            setCurrentRatioId(newRatio);
+            if (newRatio === '1:1') {
+              setIsFullScreen(false);
+            } else {
+              setIsFullScreen(true);
+            }
+          }}
         />
 
         {/* Layout Presets (Horizontal Scroller) */}
@@ -480,8 +503,8 @@ export default function App() {
             onPress={() => setStyleModalVisible(true)}
           >
             <View style={styles.toolCardLeft}>
-              <View style={[styles.toolIconWrap, { backgroundColor: 'rgba(59, 130, 246, 0.15)' }]}>
-                <Ionicons name="grid-outline" size={20} color="#3B82F6" />
+              <View style={[styles.toolIconWrap, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}>
+                <Ionicons name="grid-outline" size={20} color="#FFFFFF" />
               </View>
               <View>
                 <Text style={styles.toolCardTitle}>Viền & Màu nền khung</Text>
@@ -497,8 +520,8 @@ export default function App() {
             onPress={() => setDraftsModalVisible(true)}
           >
             <View style={styles.toolCardLeft}>
-              <View style={[styles.toolIconWrap, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                <Ionicons name="folder-open-outline" size={20} color="#10B981" />
+              <View style={[styles.toolIconWrap, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}>
+                <Ionicons name="folder-open-outline" size={20} color="#FFFFFF" />
               </View>
               <View>
                 <Text style={styles.toolCardTitle}>Quản lý bản nháp</Text>
@@ -661,7 +684,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   activeScreenToggleBtn: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#FFFFFF',
   },
   screenToggleText: {
     color: '#A1A1AA',
@@ -669,7 +692,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   activeScreenToggleText: {
-    color: '#FFFFFF',
+    color: '#16161B',
     fontWeight: '700',
   },
 

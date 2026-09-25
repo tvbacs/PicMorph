@@ -53,20 +53,7 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
       }
     };
 
-    const isSquareFit = !isFullScreen;
-    const squareDimension =
-      containerSize.width > 0 && containerSize.height > 0
-        ? Math.min(containerSize.width, containerSize.height)
-        : undefined;
-
-    const gridStyle =
-      isSquareFit && squareDimension
-        ? {
-            width: squareDimension,
-            height: squareDimension,
-            position: 'relative' as const,
-          }
-        : styles.gridLayer;
+    const gridStyle = styles.gridLayer;
 
     const initialX = textConfig.positionX ?? 0;
     const initialY = textConfig.positionY ?? 0;
@@ -143,6 +130,12 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
 
             const isSelected = selectedSlotIndex === index;
 
+            const halfGap = (canvasStyle.gap || 0) / 2;
+            const padLeft = slotLayout.left <= 0 ? 0 : halfGap;
+            const padRight = slotLayout.left + slotLayout.width >= 99.5 ? 0 : halfGap;
+            const padTop = slotLayout.top <= 0 ? 0 : halfGap;
+            const padBottom = slotLayout.top + slotLayout.height >= 99.5 ? 0 : halfGap;
+
             return (
               <View
                 key={`slot-${index}-${layout.id}`}
@@ -153,7 +146,10 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
                     top: `${slotLayout.top}%`,
                     width: `${slotLayout.width}%`,
                     height: `${slotLayout.height}%`,
-                    padding: canvasStyle.gap / 2,
+                    paddingLeft: padLeft,
+                    paddingRight: padRight,
+                    paddingTop: padTop,
+                    paddingBottom: padBottom,
                   },
                 ]}
               >

@@ -110,10 +110,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   currentTag: {
-    color: '#60A5FA',
+    color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '700',
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    backgroundColor: '#272730',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 6,
@@ -131,17 +131,18 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     backgroundColor: '#202026',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: '#2D2D36',
     alignItems: 'center',
     justifyContent: 'center',
   },
   activeIconBox: {
-    borderColor: '#3B82F6',
-    backgroundColor: 'rgba(59, 130, 246, 0.18)',
+    borderColor: '#D4D4D8',
+    borderWidth: 1,
+    backgroundColor: '#272730',
   },
   ratioFrame: {
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderRadius: 3,
   },
   ratioLabel: {
@@ -152,7 +153,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   activeRatioLabel: {
-    color: '#FFFFFF',
-    fontWeight: '800',
+    color: '#E4E4E7',
+    fontWeight: '700',
   },
 });
