@@ -330,7 +330,16 @@ export default function App() {
         </View>
 
         <View style={styles.headerRightActions}>
-          {/* Nút lưu bản nháp: icon only, disabled khi chưa có ảnh */}
+          {/* Nút xem danh sách bản nháp đã lưu */}
+          <TouchableOpacity
+            style={styles.headerActionBtn}
+            onPress={() => setDraftsModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="folder-outline" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          {/* Nút lưu bản nháp: icon only, bên phải nút bản nháp đã lưu, disabled khi chưa có ảnh */}
           <TouchableOpacity
             style={[
               styles.headerActionBtn,
@@ -349,15 +358,6 @@ export default function App() {
                 color={hasContent ? '#FFFFFF' : '#52525B'}
               />
             )}
-          </TouchableOpacity>
-
-          {/* Nút xem danh sách bản nháp */}
-          <TouchableOpacity
-            style={styles.headerActionBtn}
-            onPress={() => setDraftsModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="folder-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
 
           {/* Nút xuất ảnh HD: icon only, disabled khi chưa có ảnh */}
@@ -513,23 +513,6 @@ export default function App() {
             </View>
             <Ionicons name="chevron-forward" size={18} color="#71717A" />
           </TouchableOpacity>
-
-          {/* Drafts Manager Card */}
-          <TouchableOpacity
-            style={[styles.singleToolCard, { marginTop: 10 }]}
-            onPress={() => setDraftsModalVisible(true)}
-          >
-            <View style={styles.toolCardLeft}>
-              <View style={[styles.toolIconWrap, { backgroundColor: 'rgba(255, 255, 255, 0.1)' }]}>
-                <Ionicons name="folder-open-outline" size={20} color="#FFFFFF" />
-              </View>
-              <View>
-                <Text style={styles.toolCardTitle}>Quản lý bản nháp</Text>
-                <Text style={styles.toolCardSub}>Lưu & Mở lại thiết kế đang làm dở</Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#71717A" />
-          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -607,7 +590,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 6,
   },
   logoRow: {
     flexDirection: 'row',
@@ -699,7 +683,8 @@ const styles = StyleSheet.create({
   canvasCenterContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 24, // Generous buffer padding to tap empty space
+    paddingTop: 15,
+    paddingBottom: 18,
     width: '100%',
   },
   canvasShadowBox: {

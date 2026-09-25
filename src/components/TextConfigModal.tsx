@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TextOverlayConfig } from '../types';
-import { FONT_OPTIONS } from '../constants/themes';
+import { FONT_OPTIONS, COLOR_CATEGORIES, COLOR_PALETTE } from '../constants/themes';
 
 interface TextConfigModalProps {
   visible: boolean;
@@ -19,16 +19,6 @@ interface TextConfigModalProps {
   onClose: () => void;
   onSave: (newConfig: TextOverlayConfig) => void;
 }
-
-const COLOR_OPTIONS = [
-  '#FFFFFF',
-  '#000000',
-  '#FBBF24',
-  '#EC4899',
-  '#60A5FA',
-  '#34D399',
-  '#A855F7',
-];
 
 export const TextConfigModal: React.FC<TextConfigModalProps> = ({
   visible,
@@ -47,6 +37,25 @@ export const TextConfigModal: React.FC<TextConfigModalProps> = ({
   const [positionX, setPositionX] = useState(config.positionX ?? 0);
   const [positionY, setPositionY] = useState(config.positionY ?? 0);
   const [selectedFontId, setSelectedFontId] = useState(config.fontId || 'heavy-sans');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [customHex, setCustomHex] = useState<string>('');
+
+  const displayColors =
+    selectedCategory === 'all'
+      ? COLOR_PALETTE
+      : (COLOR_CATEGORIES.find((c) => c.id === selectedCategory)?.colors || COLOR_PALETTE);
+
+  const handleApplyCustomHex = () => {
+    let hex = customHex.trim();
+    if (!hex) return;
+    if (!hex.startsWith('#')) {
+      hex = `#${hex}`;
+    }
+    if (/^#[0-9A-Fa-f]{3,8}$/.test(hex)) {
+      setColor(hex);
+      setCustomHex('');
+    }
+  };
 
   useEffect(() => {
     setEnabled(config.enabled);
@@ -219,7 +228,7 @@ export const TextConfigModal: React.FC<TextConfigModalProps> = ({
                 <Text style={styles.sectionValue}>{fontSize}px</Text>
               </View>
               <View style={styles.buttonOptionsRow}>
-                {[22, 28, 34, 40, 48].map((size) => (
+                {[12, 16, 20, 26, 34, 42, 50].map((size) => (
                   <TouchableOpacity
                     key={size}
                     style={[
@@ -270,29 +279,119 @@ export const TextConfigModal: React.FC<TextConfigModalProps> = ({
               </View>
             </View>
 
-            {/* Color Palette */}
+            {/* Color Palette with Category Filter & Custom HEX */}
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>Màu sắc chữ</Text>
-              <View style={styles.colorPaletteRow}>
-                {COLOR_OPTIONS.map((c) => (
-                  <TouchableOpacity
-                    key={c}
+              <View style={styles.sectionHeaderRow}>
+                <Text style={styles.sectionLabel}>Màu sắc chữ</Text>
+                <Text style={styles.sectionValue}>{displayColors.length} màu</Text>
+              </View>
+
+              {/* Category Pills */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryPillsRow}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.categoryPill,
+                    selectedCategory === 'all' && styles.activeCategoryPill,
+                  ]}
+                  onPress={() => setSelectedCategory('all')}
+                >
+                  <Text
                     style={[
-                      styles.colorCircle,
-                      { backgroundColor: c },
-                      color === c && styles.activeColorCircle,
+                      styles.categoryPillText,
+                      selectedCategory === 'all' && styles.activeCategoryPillText,
                     ]}
-                    onPress={() => setColor(c)}
                   >
-                    {color === c && (
-                      <Ionicons
-                        name="checkmark"
-                        size={16}
-                        color={c === '#FFFFFF' || c === '#FBBF24' ? '#000000' : '#FFFFFF'}
-                      />
-                    )}
+                    Tất cả
+                  </Text>
+                </TouchableOpacity>
+                {COLOR_CATEGORIES.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[
+                      styles.categoryPill,
+                      selectedCategory === cat.id && styles.activeCategoryPill,
+                    ]}
+                    onPress={() => setSelectedCategory(cat.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryPillText,
+                        selectedCategory === cat.id && styles.activeCategoryPillText,
+                      ]}
+                    >
+                      {cat.name}
+                    </Text>
                   </TouchableOpacity>
                 ))}
+              </ScrollView>
+
+              {/* Color Grid */}
+              <View style={styles.colorGrid}>
+                {displayColors.map((c) => {
+                  const isSelected = color.toLowerCase() === c.value.toLowerCase();
+                  return (
+                    <TouchableOpacity
+                      key={`${c.value}-${c.label}`}
+                      style={[
+                        styles.colorCard,
+                        isSelected && styles.activeColorCard,
+                      ]}
+                      onPress={() => setColor(c.value)}
+                    >
+                      <View style={[styles.colorCircle, { backgroundColor: c.value }]}>
+                        {isSelected && (
+                          <Ionicons
+                            name="checkmark"
+                            size={14}
+                            color={
+                              c.value === '#FFFFFF' ||
+                              c.value === '#FAF7F2' ||
+                              c.value === '#F5F5DC' ||
+                              c.value === '#FEF08A'
+                                ? '#000000'
+                                : '#FFFFFF'
+                            }
+                          />
+                        )}
+                      </View>
+                      <Text style={styles.colorName} numberOfLines={1}>
+                        {c.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Custom Hex Row */}
+              <View style={styles.customHexRow}>
+                <View
+                  style={[
+                    styles.currentPreviewBox,
+                    { backgroundColor: color },
+                    color.toLowerCase() === '#ffffff' && {
+                      borderWidth: 1,
+                      borderColor: '#71717A',
+                    },
+                  ]}
+                />
+                <TextInput
+                  style={styles.hexInput}
+                  value={customHex}
+                  onChangeText={setCustomHex}
+                  placeholder="Nhập mã hex VD: #FFE4E1, #FF6B6B..."
+                  placeholderTextColor="#71717A"
+                  autoCapitalize="characters"
+                />
+                <TouchableOpacity
+                  style={styles.applyHexBtn}
+                  onPress={handleApplyCustomHex}
+                >
+                  <Text style={styles.applyHexText}>Áp dụng</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -310,7 +409,7 @@ export const TextConfigModal: React.FC<TextConfigModalProps> = ({
                   <Ionicons
                     name="albums-outline"
                     size={20}
-                    color={hasBackground ? '#3B82F6' : '#A1A1AA'}
+                    color={hasBackground ? '#FFFFFF' : '#71717A'}
                   />
                   <Text
                     style={[
@@ -332,7 +431,7 @@ export const TextConfigModal: React.FC<TextConfigModalProps> = ({
                   <Ionicons
                     name="sparkles-outline"
                     size={20}
-                    color={hasShadow ? '#3B82F6' : '#A1A1AA'}
+                    color={hasShadow ? '#FFFFFF' : '#71717A'}
                   />
                   <Text
                     style={[
@@ -372,8 +471,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2D2D36',
   },
   iconButton: {
     padding: 6,
@@ -462,12 +559,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: '#2D2D36',
   },
   activeFontCard: {
-    borderColor: '#3B82F6',
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    borderColor: '#D4D4D8',
+    borderWidth: 1,
+    backgroundColor: '#262630',
   },
   fontPreviewText: {
     color: '#FFFFFF',
@@ -476,7 +574,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   activeFontPreviewText: {
-    color: '#60A5FA',
+    color: '#FFFFFF',
   },
   fontCardName: {
     color: '#A1A1AA',
@@ -485,22 +583,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   activeFontCardName: {
-    color: '#FFFFFF',
+    color: '#E4E4E7',
     fontWeight: '700',
   },
   resetPosBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#1E1E24',
+    backgroundColor: '#202026',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#3F3F46',
+    borderColor: '#2D2D36',
   },
   resetPosText: {
-    color: '#60A5FA',
+    color: '#E4E4E7',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -508,7 +606,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#1E1E24',
+    backgroundColor: '#202026',
     padding: 10,
     borderRadius: 10,
     marginTop: 4,
@@ -521,47 +619,126 @@ const styles = StyleSheet.create({
   },
   buttonOptionsRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 5,
   },
   sizeOption: {
     flex: 1,
     height: 38,
     borderRadius: 10,
-    backgroundColor: '#1E1E24',
+    backgroundColor: '#202026',
     borderWidth: 1,
-    borderColor: '#3F3F46',
+    borderColor: '#2D2D36',
     justifyContent: 'center',
     alignItems: 'center',
   },
   activeSizeOption: {
-    backgroundColor: '#3B82F6',
-    borderColor: '#3B82F6',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+    borderWidth: 1,
   },
   sizeText: {
-    color: '#D4D4D8',
-    fontSize: 12,
+    color: '#A1A1AA',
+    fontSize: 11,
     fontWeight: '700',
   },
   activeSizeText: {
-    color: '#FFFFFF',
+    color: '#16161B',
+    fontWeight: '700',
   },
-  colorPaletteRow: {
+  categoryPillsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 4,
+    gap: 6,
+    marginBottom: 12,
+  },
+  categoryPill: {
+    backgroundColor: '#202026',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2D2D36',
+  },
+  activeCategoryPill: {
+    borderColor: '#D4D4D8',
+    borderWidth: 1,
+    backgroundColor: '#262630',
+  },
+  categoryPillText: {
+    color: '#A1A1AA',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  activeCategoryPillText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  colorCard: {
+    width: '23%',
+    alignItems: 'center',
+    backgroundColor: '#202026',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2D2D36',
+  },
+  activeColorCard: {
+    borderColor: '#D4D4D8',
+    borderWidth: 1,
+    backgroundColor: '#262630',
   },
   colorCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
+    marginBottom: 4,
   },
-  activeColorCircle: {
-    borderColor: '#3B82F6',
-    transform: [{ scale: 1.1 }],
+  colorName: {
+    color: '#D4D4D8',
+    fontSize: 9,
+    textAlign: 'center',
+  },
+  customHexRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+  },
+  currentPreviewBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+  },
+  hexInput: {
+    flex: 1,
+    height: 38,
+    backgroundColor: '#202026',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2D2D36',
+    paddingHorizontal: 10,
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
+  applyHexBtn: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  applyHexText: {
+    color: '#16161B',
+    fontSize: 12,
+    fontWeight: '700',
   },
   effectRow: {
     flexDirection: 'row',
@@ -569,17 +746,18 @@ const styles = StyleSheet.create({
   },
   effectCard: {
     flex: 1,
-    backgroundColor: '#1E1E24',
+    backgroundColor: '#202026',
     padding: 12,
     borderRadius: 12,
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#3F3F46',
+    borderWidth: 1,
+    borderColor: '#2D2D36',
     gap: 6,
   },
   activeEffectCard: {
-    borderColor: '#3B82F6',
-    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    borderColor: '#D4D4D8',
+    borderWidth: 1,
+    backgroundColor: '#262630',
   },
   effectText: {
     color: '#A1A1AA',

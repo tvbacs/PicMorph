@@ -107,8 +107,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#27272A',
   },
   iconButton: {
     padding: 6,

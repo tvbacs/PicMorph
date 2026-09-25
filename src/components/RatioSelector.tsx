@@ -43,21 +43,21 @@ export const RatioSelector: React.FC<RatioSelectorProps> = ({
                   <Ionicons
                     name="logo-tiktok"
                     size={20}
-                    color={isSelected ? '#FFFFFF' : '#A1A1AA'}
+                    color={isSelected ? '#3B82F6' : '#A1A1AA'}
                   />
                 )}
                 {item.iconType === 'instagram' && (
                   <Ionicons
                     name="logo-instagram"
                     size={20}
-                    color={isSelected ? '#FFFFFF' : '#A1A1AA'}
+                    color={isSelected ? '#3B82F6' : '#A1A1AA'}
                   />
                 )}
                 {item.iconType === 'youtube' && (
                   <Ionicons
                     name="logo-youtube"
                     size={20}
-                    color={isSelected ? '#FFFFFF' : '#A1A1AA'}
+                    color={isSelected ? '#3B82F6' : '#A1A1AA'}
                   />
                 )}
                 {item.iconType === 'frame' && (
@@ -67,7 +67,7 @@ export const RatioSelector: React.FC<RatioSelectorProps> = ({
                       {
                         width: item.frameWidth || 20,
                         height: item.frameHeight || 20,
-                        borderColor: isSelected ? '#FFFFFF' : '#A1A1AA',
+                        borderColor: isSelected ? '#3B82F6' : '#A1A1AA',
                       },
                     ]}
                   />

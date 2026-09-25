@@ -52,7 +52,7 @@
 
 ### 1. Di chuyển vào thư mục dự án
 ```bash
-cd C:\Users\Lenovo\Workspace\photo-layout-app
+cd C:\Users\Lenovo\Workspace\PicMorph
 ```
 
 ### 2. Khởi chạy máy chủ Expo Metro

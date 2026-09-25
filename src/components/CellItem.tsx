@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     overflow: 'hidden',
-    backgroundColor: '#16161B',
+    backgroundColor: '#000000',
   },
   selectedBorder: {
     borderColor: '#FFFFFF',
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     height: '100%',
     overflow: 'hidden',
     position: 'relative',
-    backgroundColor: '#16161B',
+    backgroundColor: '#000000',
   },
   image: {
     width: '100%',
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#1C1C22',
+    backgroundColor: '#111111',
   },
   emptyIconCircle: {
     width: 48,

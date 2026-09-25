@@ -110,7 +110,7 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
           styles.canvasContainer,
           {
             backgroundColor: canvasStyle.bgColor,
-            padding: canvasStyle.padding,
+            padding: (canvasStyle.padding || 0) + (canvasStyle.gap || 0) / 2,
           },
         ]}
       >
@@ -129,12 +129,8 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
             };
 
             const isSelected = selectedSlotIndex === index;
-
             const halfGap = (canvasStyle.gap || 0) / 2;
-            const padLeft = slotLayout.left <= 0 ? 0 : halfGap;
-            const padRight = slotLayout.left + slotLayout.width >= 99.5 ? 0 : halfGap;
-            const padTop = slotLayout.top <= 0 ? 0 : halfGap;
-            const padBottom = slotLayout.top + slotLayout.height >= 99.5 ? 0 : halfGap;
+            const isKhit = (canvasStyle.gap || 0) === 0;
 
             return (
               <View
@@ -146,10 +142,9 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
                     top: `${slotLayout.top}%`,
                     width: `${slotLayout.width}%`,
                     height: `${slotLayout.height}%`,
-                    paddingLeft: padLeft,
-                    paddingRight: padRight,
-                    paddingTop: padTop,
-                    paddingBottom: padBottom,
+                    padding: halfGap,
+                    // When gap=0 (khít), bleed -0.5px to cover sub-pixel seams
+                    margin: isKhit ? -0.5 : 0,
                   },
                 ]}
               >
