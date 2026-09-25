@@ -1,11 +1,22 @@
-export type AspectRatioType = '9:16' | '1:1' | '4:5' | '3:4' | '16:9';
+export type AspectRatioType =
+  | '9:16'
+  | '1:1'
+  | '16:9'
+  | '4:3'
+  | '3:4'
+  | '5.8"'
+  | '2:1'
+  | '2.35:1'
+  | '1.85:1';
 
 export interface AspectRatioOption {
   id: AspectRatioType;
   label: string;
   sublabel: string;
   ratio: number; // width / height
-  iconName?: string;
+  iconType: 'tiktok' | 'instagram' | 'youtube' | 'frame';
+  frameWidth?: number;
+  frameHeight?: number;
 }
 
 export interface SlotLayout {

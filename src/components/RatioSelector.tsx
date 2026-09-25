@@ -15,6 +15,14 @@ export const RatioSelector: React.FC<RatioSelectorProps> = ({
 }) => {
   return (
     <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Ionicons name="expand-outline" size={15} color="#60A5FA" />
+          <Text style={styles.title}>Tỷ lệ khung hình</Text>
+        </View>
+        <Text style={styles.currentTag}>{currentRatioId}</Text>
+      </View>
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -27,18 +35,50 @@ export const RatioSelector: React.FC<RatioSelectorProps> = ({
             <TouchableOpacity
               key={item.id}
               activeOpacity={0.8}
-              style={[styles.chip, isSelected && styles.activeChip]}
+              style={styles.itemWrapper}
               onPress={() => onSelectRatio(item.id)}
             >
-              <Ionicons
-                name={(item.iconName as any) || 'phone-portrait-outline'}
-                size={14}
-                color={isSelected ? '#3B82F6' : '#A1A1AA'}
-              />
-              <Text style={[styles.ratioLabel, isSelected && styles.activeLabel]}>
+              <View style={[styles.iconBox, isSelected && styles.activeIconBox]}>
+                {item.iconType === 'tiktok' && (
+                  <Ionicons
+                    name="logo-tiktok"
+                    size={20}
+                    color={isSelected ? '#FFFFFF' : '#A1A1AA'}
+                  />
+                )}
+                {item.iconType === 'instagram' && (
+                  <Ionicons
+                    name="logo-instagram"
+                    size={20}
+                    color={isSelected ? '#FFFFFF' : '#A1A1AA'}
+                  />
+                )}
+                {item.iconType === 'youtube' && (
+                  <Ionicons
+                    name="logo-youtube"
+                    size={20}
+                    color={isSelected ? '#FFFFFF' : '#A1A1AA'}
+                  />
+                )}
+                {item.iconType === 'frame' && (
+                  <View
+                    style={[
+                      styles.ratioFrame,
+                      {
+                        width: item.frameWidth || 20,
+                        height: item.frameHeight || 20,
+                        borderColor: isSelected ? '#FFFFFF' : '#A1A1AA',
+                      },
+                    ]}
+                  />
+                )}
+              </View>
+              <Text
+                style={[styles.ratioLabel, isSelected && styles.activeRatioLabel]}
+                numberOfLines={1}
+              >
                 {item.label}
               </Text>
-              <Text style={styles.ratioSub}>{item.sublabel.split('/')[0].trim()}</Text>
             </TouchableOpacity>
           );
         })}
@@ -49,38 +89,70 @@ export const RatioSelector: React.FC<RatioSelectorProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 4,
+    marginTop: 6,
+    marginBottom: 8,
   },
-  scrollList: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  chip: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E24',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 18,
-    gap: 5,
-    borderWidth: 1,
-    borderColor: '#27272A',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 8,
   },
-  activeChip: {
-    borderColor: '#3B82F6',
-    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  ratioLabel: {
-    color: '#D4D4D8',
-    fontSize: 12,
+  title: {
+    color: '#F4F4F5',
+    fontSize: 13,
     fontWeight: '700',
   },
-  activeLabel: {
+  currentTag: {
     color: '#60A5FA',
+    fontSize: 11,
+    fontWeight: '700',
+    backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
-  ratioSub: {
+  scrollList: {
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  itemWrapper: {
+    alignItems: 'center',
+    width: 58,
+  },
+  iconBox: {
+    width: 54,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#202026',
+    borderWidth: 1.5,
+    borderColor: '#2D2D36',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeIconBox: {
+    borderColor: '#3B82F6',
+    backgroundColor: 'rgba(59, 130, 246, 0.18)',
+  },
+  ratioFrame: {
+    borderWidth: 1.5,
+    borderRadius: 3,
+  },
+  ratioLabel: {
+    marginTop: 6,
     color: '#71717A',
-    fontSize: 10,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  activeRatioLabel: {
+    color: '#FFFFFF',
+    fontWeight: '800',
   },
 });

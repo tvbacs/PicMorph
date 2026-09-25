@@ -22,8 +22,10 @@ import { LAYOUT_PRESETS } from './src/constants/layouts';
 import {
   DEFAULT_CANVAS_STYLE,
   DEFAULT_TEXT_CONFIG,
+  ASPECT_RATIOS,
 } from './src/constants/themes';
 import {
+  AspectRatioType,
   CanvasStyleConfig,
   LayoutPreset,
   SlotImageState,
@@ -32,6 +34,7 @@ import {
 
 import { CollageCanvas } from './src/components/CollageCanvas';
 import { LayoutSelector } from './src/components/LayoutSelector';
+import { RatioSelector } from './src/components/RatioSelector';
 import { CropModal } from './src/components/CropModal';
 import { TextConfigModal } from './src/components/TextConfigModal';
 import { StyleModal } from './src/components/StyleModal';
@@ -42,9 +45,9 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function App() {
   const viewShotRef = useRef<any>(null);
 
-  // Layout & Screen Mode States
+  // Layout & Aspect Ratio States
   const [currentLayout, setCurrentLayout] = useState<LayoutPreset>(LAYOUT_PRESETS[0]);
-  const [isFullScreen, setIsFullScreen] = useState(false); // false: cố định 4 ảnh vuông, true: kéo dài full 9:16
+  const [currentRatioId, setCurrentRatioId] = useState<AspectRatioType>('1:1');
 
   // Slots State: All slots start completely empty (NO sample images)
   const [slots, setSlots] = useState<SlotImageState[]>(() => {
@@ -79,22 +82,37 @@ export default function App() {
   const [exportedImageUri, setExportedImageUri] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
-  // Calculate Canvas Dimensions dynamically
+  // Calculate Canvas Dimensions dynamically based on selected CapCut aspect ratio
+  const selectedRatioConfig =
+    ASPECT_RATIOS.find((r) => r.id === currentRatioId) || ASPECT_RATIOS[1];
+  const targetRatio = selectedRatioConfig.ratio; // width / height
+
   let canvasDisplayWidth: number;
   let canvasDisplayHeight: number;
 
-  if (!isFullScreen) {
-    // Cố định 4 ô vuông vức như ảnh mẫu
-    const squareSize = Math.min(SCREEN_WIDTH - 28, 360);
-    canvasDisplayWidth = squareSize;
-    canvasDisplayHeight = squareSize;
+  const MAX_CANVAS_W = Math.min(SCREEN_WIDTH - 28, 360);
+  const MAX_CANVAS_H = 460;
+
+  if (targetRatio === 1) {
+    // 1:1 Square
+    const size = Math.min(MAX_CANVAS_W, 350);
+    canvasDisplayWidth = size;
+    canvasDisplayHeight = size;
+  } else if (targetRatio < 1) {
+    // Portrait (9:16, 3:4, 5.8")
+    canvasDisplayHeight = MAX_CANVAS_H;
+    canvasDisplayWidth = Math.round(canvasDisplayHeight * targetRatio);
+    if (canvasDisplayWidth > MAX_CANVAS_W) {
+      canvasDisplayWidth = MAX_CANVAS_W;
+      canvasDisplayHeight = Math.round(canvasDisplayWidth / targetRatio);
+    }
   } else {
-    // Kéo dài full chiều dài (tỷ lệ 9:16)
-    canvasDisplayHeight = 500;
-    canvasDisplayWidth = Math.round(canvasDisplayHeight * (9 / 16));
-    if (canvasDisplayWidth > SCREEN_WIDTH - 28) {
-      canvasDisplayWidth = SCREEN_WIDTH - 28;
-      canvasDisplayHeight = Math.round(canvasDisplayWidth / (9 / 16));
+    // Landscape (16:9, 4:3, 2:1, 2.35:1, 1.85:1)
+    canvasDisplayWidth = MAX_CANVAS_W;
+    canvasDisplayHeight = Math.round(canvasDisplayWidth / targetRatio);
+    if (canvasDisplayHeight > 340) {
+      canvasDisplayHeight = 340;
+      canvasDisplayWidth = Math.round(canvasDisplayHeight * targetRatio);
     }
   }
 
@@ -299,42 +317,11 @@ export default function App() {
 
 
 
-        {/* Screen Mode Switch: Ảnh vuông vs Full chiều dài */}
-        <View style={styles.screenToggleBar}>
-          <TouchableOpacity
-            style={[
-              styles.screenToggleBtn,
-              !isFullScreen && styles.activeScreenToggleBtn,
-            ]}
-            onPress={() => setIsFullScreen(false)}
-          >
-            <Text
-              style={[
-                styles.screenToggleText,
-                !isFullScreen && styles.activeScreenToggleText,
-              ]}
-            >
-              Ảnh vuông
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.screenToggleBtn,
-              isFullScreen && styles.activeScreenToggleBtn,
-            ]}
-            onPress={() => setIsFullScreen(true)}
-          >
-            <Text
-              style={[
-                styles.screenToggleText,
-                isFullScreen && styles.activeScreenToggleText,
-              ]}
-            >
-              Full chiều dài
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* CapCut-style Aspect Ratio Selector */}
+        <RatioSelector
+          currentRatioId={currentRatioId}
+          onSelectRatio={(newRatio) => setCurrentRatioId(newRatio)}
+        />
 
         {/* Layout Presets (Horizontal Scroller) */}
         <LayoutSelector
@@ -468,39 +455,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
   },
-  screenToggleBar: {
-    flexDirection: 'row',
-    backgroundColor: '#202026',
-    marginHorizontal: 16,
-    marginTop: 6,
-    marginBottom: 10,
-    borderRadius: 12,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: '#2D2D36',
-    gap: 6,
-  },
-  screenToggleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 9,
-    borderRadius: 8,
-    gap: 6,
-  },
-  activeScreenToggleBtn: {
-    backgroundColor: '#3B82F6',
-  },
-  screenToggleText: {
-    color: '#A1A1AA',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  activeScreenToggleText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
+
   canvasCenterContainer: {
     alignItems: 'center',
     justifyContent: 'center',
