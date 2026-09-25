@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "photo-layout-app",
-    "slug": "photo-layout-app",
+    "name": "PicMorph",
+    "slug": "picmorph",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,6 +20,22 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sharing",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ứng dụng cần truy cập thư viện ảnh để thêm ảnh vào layout của bạn."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Ứng dụng cần quyền lưu ảnh layout đã tạo vào thư viện ảnh của bạn.",
+          "savePhotosPermission": "Ứng dụng cần quyền lưu ảnh layout đã tạo vào thư viện ảnh của bạn."
+        }
+      ]
+    ]
   }
 }
