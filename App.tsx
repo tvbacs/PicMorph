@@ -3,6 +3,7 @@ import {
   StyleSheet,
   View,
   Text,
+  Image,
   TouchableOpacity,
   Pressable,
   ScrollView,
@@ -27,6 +28,7 @@ import {
 import {
   AspectRatioType,
   CanvasStyleConfig,
+  DraftItem,
   LayoutPreset,
   SlotImageState,
   TextOverlayConfig,
@@ -39,6 +41,8 @@ import { CropModal } from './src/components/CropModal';
 import { TextConfigModal } from './src/components/TextConfigModal';
 import { StyleModal } from './src/components/StyleModal';
 import { ExportSuccessModal } from './src/components/ExportSuccessModal';
+import { DraftsModal } from './src/components/DraftsModal';
+import { draftService } from './src/services/draftService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -47,7 +51,8 @@ export default function App() {
 
   // Layout & Aspect Ratio States
   const [currentLayout, setCurrentLayout] = useState<LayoutPreset>(LAYOUT_PRESETS[0]);
-  const [currentRatioId, setCurrentRatioId] = useState<AspectRatioType>('1:1');
+  const [currentRatioId, setCurrentRatioId] = useState<AspectRatioType>('9:16');
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   // Slots State: All slots start completely empty (NO sample images)
   const [slots, setSlots] = useState<SlotImageState[]>(() => {
@@ -81,6 +86,10 @@ export default function App() {
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [exportedImageUri, setExportedImageUri] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [draftsModalVisible, setDraftsModalVisible] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  const hasContent = slots.some((s) => !!s.uri);
 
   // Calculate Canvas Dimensions dynamically based on selected CapCut aspect ratio
   const selectedRatioConfig =
@@ -244,6 +253,56 @@ export default function App() {
     }
   };
 
+  const handleSaveCurrentDraft = async () => {
+    try {
+      setIsSavingDraft(true);
+      let thumb: string | null = null;
+      if (viewShotRef.current) {
+        try {
+          thumb = await viewShotRef.current.capture({
+            format: 'jpg',
+            quality: 0.6,
+            result: 'tmpfile',
+          });
+        } catch (e) {
+          console.log('Thumbnail capture skipped:', e);
+        }
+      }
+
+      const title =
+        textConfig.enabled && textConfig.text
+          ? textConfig.text
+          : `Bản nháp ${currentLayout.name} • ${currentRatioId}`;
+
+      await draftService.saveDraft({
+        title,
+        thumbnailUri: thumb,
+        layoutId: currentLayout.id,
+        ratioId: currentRatioId,
+        slots,
+        textConfig,
+        canvasStyle,
+      });
+
+      Alert.alert('Thành công', 'Đã lưu bản nháp thiết kế vào máy của bạn.');
+    } catch (error) {
+      console.error('Save draft error:', error);
+      Alert.alert('Lỗi', 'Không thể lưu bản nháp. Vui lòng thử lại.');
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleSelectDraft = (draft: DraftItem) => {
+    const layout =
+      LAYOUT_PRESETS.find((l) => l.id === draft.layoutId) || LAYOUT_PRESETS[0];
+    setCurrentLayout(layout);
+    setCurrentRatioId(draft.ratioId);
+    setSlots(draft.slots);
+    setTextConfig(draft.textConfig);
+    setCanvasStyle(draft.canvasStyle);
+  };
+
   return (
     <SafeAreaView style={styles.safeContainer} edges={['top', 'bottom', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor="#16161B" />
@@ -251,9 +310,11 @@ export default function App() {
       {/* Main Header */}
       <View style={styles.appHeader}>
         <View style={styles.logoRow}>
-          <View style={styles.logoBadge}>
-            <Ionicons name="grid" size={18} color="#FFFFFF" />
-          </View>
+          <Image
+            source={require('./assets/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
           <View>
             <Text style={styles.logoTitle}>PicMorph</Text>
             <Text style={styles.logoSub}>Ghép ảnh nghệ thuật</Text>
@@ -261,15 +322,54 @@ export default function App() {
         </View>
 
         <View style={styles.headerRightActions}>
+          {/* Nút lưu bản nháp: icon only, disabled khi chưa có ảnh */}
           <TouchableOpacity
-            style={styles.exportIconButton}
+            style={[
+              styles.headerActionBtn,
+              (!hasContent || isSavingDraft) && styles.disabledHeaderBtn,
+            ]}
+            onPress={handleSaveCurrentDraft}
+            disabled={!hasContent || isSavingDraft}
+            activeOpacity={0.7}
+          >
+            {isSavingDraft ? (
+              <ActivityIndicator size="small" color="#3B82F6" />
+            ) : (
+              <Ionicons
+                name="bookmark-outline"
+                size={20}
+                color={hasContent ? '#FFFFFF' : '#52525B'}
+              />
+            )}
+          </TouchableOpacity>
+
+          {/* Nút xem danh sách bản nháp */}
+          <TouchableOpacity
+            style={styles.headerActionBtn}
+            onPress={() => setDraftsModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="folder-outline" size={20} color="#FFFFFF" />
+          </TouchableOpacity>
+
+          {/* Nút xuất ảnh HD: icon only, disabled khi chưa có ảnh */}
+          <TouchableOpacity
+            style={[
+              styles.exportIconButton,
+              (!hasContent || isExporting) && styles.disabledExportBtn,
+            ]}
             onPress={handleExportCollage}
-            disabled={isExporting}
+            disabled={!hasContent || isExporting}
+            activeOpacity={0.7}
           >
             {isExporting ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Ionicons name="download-outline" size={24} color="#FFFFFF" />
+              <Ionicons
+                name="download-outline"
+                size={22}
+                color={hasContent ? '#FFFFFF' : '#52525B'}
+              />
             )}
           </TouchableOpacity>
         </View>
@@ -301,6 +401,7 @@ export default function App() {
               canvasStyle={canvasStyle}
               textConfig={textConfig}
               selectedSlotIndex={selectedSlotIndex}
+              isFullScreen={isFullScreen}
               onSelectSlot={handleSelectSlot}
               onQuickPickSlot={handlePickImageForSlot}
               onPressText={() => setTextModalVisible(true)}
@@ -315,7 +416,42 @@ export default function App() {
           </View>
         </Pressable>
 
+        {/* Quick Mode Toggle: Ảnh vuông vs Full chiều dài */}
+        <View style={styles.screenToggleBar}>
+          <TouchableOpacity
+            style={[
+              styles.screenToggleBtn,
+              !isFullScreen && styles.activeScreenToggleBtn,
+            ]}
+            onPress={() => setIsFullScreen(false)}
+          >
+            <Text
+              style={[
+                styles.screenToggleText,
+                !isFullScreen && styles.activeScreenToggleText,
+              ]}
+            >
+              Ảnh vuông
+            </Text>
+          </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[
+              styles.screenToggleBtn,
+              isFullScreen && styles.activeScreenToggleBtn,
+            ]}
+            onPress={() => setIsFullScreen(true)}
+          >
+            <Text
+              style={[
+                styles.screenToggleText,
+                isFullScreen && styles.activeScreenToggleText,
+              ]}
+            >
+              Full chiều dài
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* CapCut-style Aspect Ratio Selector */}
         <RatioSelector
@@ -354,6 +490,23 @@ export default function App() {
             </View>
             <Ionicons name="chevron-forward" size={18} color="#71717A" />
           </TouchableOpacity>
+
+          {/* Drafts Manager Card */}
+          <TouchableOpacity
+            style={[styles.singleToolCard, { marginTop: 10 }]}
+            onPress={() => setDraftsModalVisible(true)}
+          >
+            <View style={styles.toolCardLeft}>
+              <View style={[styles.toolIconWrap, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+                <Ionicons name="folder-open-outline" size={20} color="#10B981" />
+              </View>
+              <View>
+                <Text style={styles.toolCardTitle}>Quản lý bản nháp</Text>
+                <Text style={styles.toolCardSub}>Lưu & Mở lại thiết kế đang làm dở</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#71717A" />
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -367,8 +520,16 @@ export default function App() {
             ? currentLayout.slots[selectedSlotIndex]
             : null
         }
-        canvasWidth={canvasDisplayWidth}
-        canvasHeight={canvasDisplayHeight}
+        canvasWidth={
+          !isFullScreen
+            ? Math.min(canvasDisplayWidth, canvasDisplayHeight)
+            : canvasDisplayWidth
+        }
+        canvasHeight={
+          !isFullScreen
+            ? Math.min(canvasDisplayWidth, canvasDisplayHeight)
+            : canvasDisplayHeight
+        }
         borderRadius={canvasStyle.borderRadius}
         onClose={() => setCropModalVisible(false)}
         onSave={handleSaveCrop}
@@ -400,6 +561,15 @@ export default function App() {
         onClose={() => setSuccessModalVisible(false)}
         onShare={handleShareExportedImage}
       />
+
+      <DraftsModal
+        visible={draftsModalVisible}
+        onClose={() => setDraftsModalVisible(false)}
+        onSelectDraft={handleSelectDraft}
+        onSaveCurrentAsDraft={handleSaveCurrentDraft}
+        isSavingCurrent={isSavingDraft}
+        hasContent={hasContent}
+      />
     </SafeAreaView>
   );
 }
@@ -421,13 +591,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  logoBadge: {
+  logoImage: {
     width: 34,
     height: 34,
-    borderRadius: 9,
-    backgroundColor: '#3B82F6',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 8,
   },
   logoTitle: {
     color: '#FFFFFF',
@@ -443,17 +610,67 @@ const styles = StyleSheet.create({
   headerRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
-  exportIconButton: {
-    padding: 6,
+  headerActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#202026',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  disabledHeaderBtn: {
+    opacity: 0.35,
+  },
+  exportIconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#3B82F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledExportBtn: {
+    backgroundColor: '#202026',
+    opacity: 0.35,
   },
   mainScroll: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 40,
+  },
+  screenToggleBar: {
+    flexDirection: 'row',
+    backgroundColor: '#202026',
+    marginHorizontal: 16,
+    marginTop: 4,
+    marginBottom: 6,
+    borderRadius: 12,
+    padding: 4,
+    gap: 6,
+  },
+  screenToggleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 9,
+    borderRadius: 8,
+    gap: 6,
+  },
+  activeScreenToggleBtn: {
+    backgroundColor: '#3B82F6',
+  },
+  screenToggleText: {
+    color: '#A1A1AA',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  activeScreenToggleText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 
   canvasCenterContainer: {
@@ -465,8 +682,6 @@ const styles = StyleSheet.create({
   canvasShadowBox: {
     borderRadius: 0,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#2D2D36',
     elevation: 8,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 4 },

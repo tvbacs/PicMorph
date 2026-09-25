@@ -81,3 +81,17 @@ export interface CanvasStyleConfig {
   borderRadius: number;  // Corner radius in px
   bgColor: string;       // Canvas background color
 }
+
+export interface DraftItem {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  thumbnailUri?: string | null;
+  layoutId: string;
+  ratioId: AspectRatioType;
+  slots: SlotImageState[];
+  textConfig: TextOverlayConfig;
+  canvasStyle: CanvasStyleConfig;
+}
+

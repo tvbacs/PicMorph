@@ -4,7 +4,7 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
   {
     id: 'grid-2x2',
     name: '4 Ô 2x2',
-    subtitle: 'Trend TikTok Hot',
+    subtitle: 'Lưới 4 ô',
     slotsCount: 4,
     isFeatured: true,
     slots: [

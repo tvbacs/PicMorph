@@ -1,4 +1,4 @@
-import React, { forwardRef, useRef, useEffect } from 'react';
+import React, { forwardRef, useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ interface CollageCanvasProps {
   canvasStyle: CanvasStyleConfig;
   textConfig: TextOverlayConfig;
   selectedSlotIndex: number | null;
+  isFullScreen?: boolean;
   onSelectSlot: (index: number) => void;
   onQuickPickSlot: (index: number) => void;
   onPressText?: () => void;
@@ -35,6 +36,7 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
       canvasStyle,
       textConfig,
       selectedSlotIndex,
+      isFullScreen = false,
       onSelectSlot,
       onQuickPickSlot,
       onPressText,
@@ -42,6 +44,30 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
     },
     ref
   ) => {
+    const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+    const handleContainerLayout = (e: any) => {
+      const { width, height } = e.nativeEvent.layout;
+      if (width > 0 && height > 0) {
+        setContainerSize({ width, height });
+      }
+    };
+
+    const isSquareFit = !isFullScreen;
+    const squareDimension =
+      containerSize.width > 0 && containerSize.height > 0
+        ? Math.min(containerSize.width, containerSize.height)
+        : undefined;
+
+    const gridStyle =
+      isSquareFit && squareDimension
+        ? {
+            width: squareDimension,
+            height: squareDimension,
+            position: 'relative' as const,
+          }
+        : styles.gridLayer;
+
     const initialX = textConfig.positionX ?? 0;
     const initialY = textConfig.positionY ?? 0;
 
@@ -92,6 +118,7 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
       <ViewShot
         ref={ref}
         options={{ format: 'png', quality: 1.0, result: 'tmpfile' }}
+        onLayout={handleContainerLayout}
         style={[
           styles.canvasContainer,
           {
@@ -101,7 +128,7 @@ export const CollageCanvas = forwardRef<any, CollageCanvasProps>(
         ]}
       >
         {/* Grid Cells */}
-        <View style={styles.gridLayer}>
+        <View style={gridStyle}>
           {layout.slots.map((slotLayout, index) => {
             const slotData = slots[index] || {
               id: index,
@@ -213,6 +240,8 @@ const styles = StyleSheet.create({
     height: '100%',
     position: 'relative',
     overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   gridLayer: {
     width: '100%',
