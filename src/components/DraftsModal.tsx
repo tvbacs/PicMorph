@@ -208,7 +208,13 @@ export const DraftsModal: React.FC<DraftsModalProps> = ({
                         <View style={styles.tagBadge}>
                           <Text style={styles.tagText}>{filledSlots} ảnh</Text>
                         </View>
-                        {item.textConfig.enabled && item.textConfig.text ? (
+                        {item.texts && item.texts.length > 0 ? (
+                          <View style={[styles.tagBadge, styles.textTagBadge]}>
+                            <Text style={styles.textTagText} numberOfLines={1}>
+                              {item.texts[0].text}
+                            </Text>
+                          </View>
+                        ) : item.textConfig?.enabled && item.textConfig?.text ? (
                           <View style={[styles.tagBadge, styles.textTagBadge]}>
                             <Text style={styles.textTagText} numberOfLines={1}>
                               {item.textConfig.text}
@@ -246,7 +252,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: '#1C1C22',
+    backgroundColor: '#1F2021',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: 18,

@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SlotImageState } from '../types';
+import { computeImageFilterStyle, getFilterOverlays } from '../utils/filterUtils';
 
 interface CellItemProps {
   slot: SlotImageState;
@@ -58,6 +59,9 @@ export const CellItem: React.FC<CellItemProps> = ({
     { scaleY: slot.flipV ? -1 : 1 },
   ];
 
+  const filterStyle = computeImageFilterStyle(slot.filters, slot.colorPreset);
+  const overlays = getFilterOverlays(slot.filters, slot.colorPreset);
+
   return (
     <TouchableOpacity
       activeOpacity={0.88}
@@ -74,9 +78,19 @@ export const CellItem: React.FC<CellItemProps> = ({
         <View style={[styles.imageWrapper, { borderRadius }]}>
           <Image
             source={{ uri: slot.uri! }}
-            style={[styles.image, { transform }]}
+            style={[styles.image, { transform }, filterStyle as any]}
             resizeMode={slot.fitMode || 'contain'}
           />
+          {overlays.map((ov) => (
+            <View
+              key={ov.key}
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: ov.backgroundColor, opacity: ov.opacity, borderRadius },
+              ]}
+            />
+          ))}
         </View>
       ) : (
         <View style={[styles.placeholder, { borderRadius }]}>

@@ -37,6 +37,105 @@ export interface LayoutPreset {
   isFeatured?: boolean;
 }
 
+export interface ImageFilters {
+  brightness: number;   // -100 to 100, default 0
+  contrast: number;     // -100 to 100, default 0
+  saturation: number;   // -100 to 100, default 0
+  exposure: number;     // -100 to 100, default 0
+  sharpness: number;    // 0 to 100, default 0
+  warmth: number;       // -100 to 100, default 0
+  highlights: number;   // -100 to 100, default 0
+  shadows: number;      // -100 to 100, default 0
+}
+
+export const DEFAULT_IMAGE_FILTERS: ImageFilters = {
+  brightness: 0,
+  contrast: 0,
+  saturation: 0,
+  exposure: 0,
+  sharpness: 0,
+  warmth: 0,
+  highlights: 0,
+  shadows: 0,
+};
+
+export type ColorPresetId =
+  | 'none'
+  | 'grayscale'
+  | 'warm'
+  | 'cool'
+  | 'vintage'
+  | 'fade'
+  | 'vivid'
+  | 'drama';
+
+export interface ColorPreset {
+  id: ColorPresetId;
+  label: string;
+  iconName: string;   // Ionicons name
+  iconColor: string;  // icon tint color
+  filters: Partial<ImageFilters>;
+}
+
+export const COLOR_PRESETS: ColorPreset[] = [
+  {
+    id: 'none',
+    label: 'Gốc',
+    iconName: 'image-outline',
+    iconColor: '#A1A1AA',
+    filters: {},
+  },
+  {
+    id: 'grayscale',
+    label: 'Xám',
+    iconName: 'contrast-outline',
+    iconColor: '#D4D4D8',
+    filters: { saturation: -100, contrast: 10 },
+  },
+  {
+    id: 'warm',
+    label: 'Ấm',
+    iconName: 'sunny-outline',
+    iconColor: '#FB923C',
+    filters: { warmth: 50, brightness: 5, saturation: 15 },
+  },
+  {
+    id: 'cool',
+    label: 'Lạnh',
+    iconName: 'snow-outline',
+    iconColor: '#60A5FA',
+    filters: { warmth: -50, brightness: 5, saturation: 10 },
+  },
+  {
+    id: 'vintage',
+    label: 'Cổ điển',
+    iconName: 'film-outline',
+    iconColor: '#D97706',
+    filters: { warmth: 30, saturation: -30, contrast: 20, brightness: -10 },
+  },
+  {
+    id: 'fade',
+    label: 'Mờ nhạt',
+    iconName: 'partly-sunny-outline',
+    iconColor: '#94A3B8',
+    filters: { brightness: 20, saturation: -40, contrast: -20 },
+  },
+  {
+    id: 'vivid',
+    label: 'Rực rỡ',
+    iconName: 'color-palette-outline',
+    iconColor: '#A78BFA',
+    filters: { saturation: 60, contrast: 20, brightness: 5 },
+  },
+  {
+    id: 'drama',
+    label: 'Kịch tính',
+    iconName: 'thunderstorm-outline',
+    iconColor: '#F43F5E',
+    filters: { contrast: 50, brightness: -15, saturation: 20 },
+  },
+];
+
 export interface SlotImageState {
   id: number;
   uri: string | null;
@@ -49,6 +148,10 @@ export interface SlotImageState {
   flipH: boolean;
   flipV: boolean;
   fitMode?: 'contain' | 'cover';
+  filters?: ImageFilters;
+  colorPreset?: ColorPresetId;  // selected color preset ID
+  origWidth?: number;           // original image width from gallery
+  origHeight?: number;          // original image height from gallery
 }
 
 export interface TextOverlayConfig {
@@ -75,6 +178,26 @@ export interface TextOverlayConfig {
   fontWeight?: '900' | '800' | '700' | '600' | 'bold' | 'normal';
 }
 
+export interface TextItem {
+  id: string;
+  text: string;
+  fontSize: number;
+  color: string;
+  x: number; // px offset from center of canvas
+  y: number; // px offset from center of canvas
+  letterSpacing?: number;
+  uppercase?: boolean;
+  hasBackground?: boolean;
+  bgColor?: string;
+  bgOpacity?: number;
+  hasShadow?: boolean;
+  shadowColor?: string;
+  fontId?: string;
+  fontFamily?: string;
+  fontStyle?: 'normal' | 'italic';
+  fontWeight?: '900' | '800' | '700' | '600' | 'bold' | 'normal';
+}
+
 export interface CanvasStyleConfig {
   gap: number;           // Spacing between photos in px
   padding: number;       // Outer canvas padding in px
@@ -91,7 +214,8 @@ export interface DraftItem {
   layoutId: string;
   ratioId: AspectRatioType;
   slots: SlotImageState[];
-  textConfig: TextOverlayConfig;
+  textConfig?: TextOverlayConfig;
+  texts?: TextItem[];
   canvasStyle: CanvasStyleConfig;
 }
 
