@@ -775,16 +775,95 @@ function AppContent() {
   );
 }
 
+// ─── Error Boundary để bắt lỗi hiển thị, tránh văng ra màn hình trắng ────────
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  state: { hasError: boolean; error: Error | null } = {
+    hasError: false,
+    error: null,
+  };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('PicMorph App Error:', error, errorInfo);
+  }
+
+  handleReload = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={styles.errorContainer}>
+          <Ionicons name="warning-outline" size={48} color="#FF6B6B" style={{ marginBottom: 16 }} />
+          <Text style={styles.errorTitle}>Đã xảy ra lỗi tải ứng dụng</Text>
+          <Text style={styles.errorMsg}>
+            {this.state.error?.message || 'Vui lòng nhấn tải lại hoặc khởi động lại ứng dụng.'}
+          </Text>
+          <TouchableOpacity onPress={this.handleReload} style={styles.reloadBtn}>
+            <Text style={styles.reloadBtnText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // ─── Root export — SafeAreaProvider bao ngoài AppContent ────────────────────
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <AppContent />
+    <SafeAreaProvider style={styles.rootSafeProvider}>
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  rootSafeProvider: {
+    flex: 1,
+    backgroundColor: '#1F2021',
+  },
+  errorContainer: {
+    flex: 1,
+    backgroundColor: '#1F2021',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  errorTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorMsg: {
+    color: '#A1A1AA',
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 18,
+  },
+  reloadBtn: {
+    backgroundColor: '#00B4D8',
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  reloadBtnText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
   safeContainer: {
     flex: 1,
     backgroundColor: '#1F2021',
