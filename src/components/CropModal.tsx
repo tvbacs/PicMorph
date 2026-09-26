@@ -174,7 +174,20 @@ export const CropModal: React.FC<CropModalProps> = ({
     if (frameWidth > MAX_W) { frameWidth = MAX_W; frameHeight = Math.round(MAX_W / slotAspect); }
   }
 
-  const stateRef = useRef({ x: 0, y: 0, scale: 1, startX: 0, startY: 0, startScale: 1, initialDistance: 0 });
+  const stateRef = useRef({
+    x: 0,
+    y: 0,
+    scale: 1,
+    // 1-finger drag tracking
+    lastTouchX: 0,
+    lastTouchY: 0,
+    // 2-finger pinch & dual-drag tracking
+    isPinching: false,
+    initialDistance: 0,
+    startScale: 1,
+    lastMidX: 0,
+    lastMidY: 0,
+  });
 
   useEffect(() => {
     if (visible && slotData) {
@@ -195,7 +208,18 @@ export const CropModal: React.FC<CropModalProps> = ({
 
       setScale(initScale); setOffsetX(initX); setOffsetY(initY);
       setRotation(initRot); setFlipH(initFlipH); setFlipV(initFlipV); setFitMode(initFit);
-      stateRef.current = { x: initX, y: initY, scale: initScale, startX: initX, startY: initY, startScale: initScale, initialDistance: 0 };
+      stateRef.current = {
+        x: initX,
+        y: initY,
+        scale: initScale,
+        lastTouchX: 0,
+        lastTouchY: 0,
+        isPinching: false,
+        initialDistance: 0,
+        startScale: initScale,
+        lastMidX: 0,
+        lastMidY: 0,
+      };
 
       // init filter states
       const initFilters = slotData.filters ? { ...DEFAULT_IMAGE_FILTERS, ...slotData.filters } : { ...DEFAULT_IMAGE_FILTERS };
@@ -207,8 +231,20 @@ export const CropModal: React.FC<CropModalProps> = ({
   }, [visible, slotData, frameWidth, frameHeight]);
 
   const getDistance = (touches: any[]) => {
+    if (!touches || touches.length < 2) return 0;
     const [t1, t2] = touches;
-    return Math.sqrt(Math.pow(t1.pageX - t2.pageX, 2) + Math.pow(t1.pageY - t2.pageY, 2));
+    const dx = t1.pageX - t2.pageX;
+    const dy = t1.pageY - t2.pageY;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  const getMidpoint = (touches: any[]) => {
+    if (!touches || touches.length < 2) return { x: 0, y: 0 };
+    const [t1, t2] = touches;
+    return {
+      x: (t1.pageX + t2.pageX) / 2,
+      y: (t1.pageY + t2.pageY) / 2,
+    };
   };
 
   const panResponderRef = useRef(
@@ -217,30 +253,85 @@ export const CropModal: React.FC<CropModalProps> = ({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (evt) => {
         const touches = evt.nativeEvent.touches;
-        stateRef.current.startX = stateRef.current.x;
-        stateRef.current.startY = stateRef.current.y;
-        stateRef.current.startScale = stateRef.current.scale;
-        stateRef.current.initialDistance = touches.length >= 2 ? getDistance(touches) : 0;
-      },
-      onPanResponderMove: (evt, gesture) => {
-        const touches = evt.nativeEvent.touches;
-        if (touches.length >= 2) {
-          const currentDist = getDistance(touches);
-          if (stateRef.current.initialDistance > 0) {
-            const factor = currentDist / stateRef.current.initialDistance;
-            const newScale = Math.min(4.0, Math.max(0.6, stateRef.current.startScale * factor));
-            const rounded = +newScale.toFixed(2);
-            setScale(rounded); stateRef.current.scale = rounded;
-          }
-        } else {
-          const newX = Math.round(stateRef.current.startX + gesture.dx);
-          const newY = Math.round(stateRef.current.startY + gesture.dy);
-          setOffsetX(newX); setOffsetY(newY);
-          stateRef.current.x = newX; stateRef.current.y = newY;
+        if (touches && touches.length >= 2) {
+          stateRef.current.isPinching = true;
+          stateRef.current.initialDistance = getDistance(touches);
+          stateRef.current.startScale = stateRef.current.scale;
+          const mid = getMidpoint(touches);
+          stateRef.current.lastMidX = mid.x;
+          stateRef.current.lastMidY = mid.y;
+        } else if (touches && touches.length === 1) {
+          stateRef.current.isPinching = false;
+          stateRef.current.initialDistance = 0;
+          stateRef.current.lastTouchX = touches[0].pageX;
+          stateRef.current.lastTouchY = touches[0].pageY;
         }
       },
-      onPanResponderRelease: () => {},
-      onPanResponderTerminate: () => {},
+      onPanResponderMove: (evt) => {
+        const touches = evt.nativeEvent.touches;
+        if (!touches) return;
+
+        if (touches.length >= 2) {
+          const currentDist = getDistance(touches);
+          const mid = getMidpoint(touches);
+
+          if (!stateRef.current.isPinching || stateRef.current.initialDistance <= 0) {
+            // Ngón thứ 2 vừa chạm vào màn hình trong lúc đang thao tác
+            stateRef.current.isPinching = true;
+            stateRef.current.initialDistance = currentDist > 0 ? currentDist : 1;
+            stateRef.current.startScale = stateRef.current.scale;
+            stateRef.current.lastMidX = mid.x;
+            stateRef.current.lastMidY = mid.y;
+          } else {
+            // Đang zoom 2 ngón tay
+            const factor = currentDist / stateRef.current.initialDistance;
+            const newScale = Math.min(5.0, Math.max(0.4, stateRef.current.startScale * factor));
+            const roundedScale = Math.round(newScale * 100) / 100;
+            setScale(roundedScale);
+            stateRef.current.scale = roundedScale;
+
+            // Đồng thời di chuyển theo tâm giữa 2 ngón tay
+            const dMidX = mid.x - stateRef.current.lastMidX;
+            const dMidY = mid.y - stateRef.current.lastMidY;
+            const newX = Math.round(stateRef.current.x + dMidX);
+            const newY = Math.round(stateRef.current.y + dMidY);
+            setOffsetX(newX);
+            setOffsetY(newY);
+            stateRef.current.x = newX;
+            stateRef.current.y = newY;
+            stateRef.current.lastMidX = mid.x;
+            stateRef.current.lastMidY = mid.y;
+          }
+        } else if (touches.length === 1) {
+          if (stateRef.current.isPinching) {
+            // Vừa nhấc 1 ngón tay ra, chuyển mượt mà về chế độ 1 ngón
+            stateRef.current.isPinching = false;
+            stateRef.current.initialDistance = 0;
+            stateRef.current.lastTouchX = touches[0].pageX;
+            stateRef.current.lastTouchY = touches[0].pageY;
+          } else {
+            // Di chuyển 1 ngón
+            const dx = touches[0].pageX - stateRef.current.lastTouchX;
+            const dy = touches[0].pageY - stateRef.current.lastTouchY;
+            const newX = Math.round(stateRef.current.x + dx);
+            const newY = Math.round(stateRef.current.y + dy);
+            setOffsetX(newX);
+            setOffsetY(newY);
+            stateRef.current.x = newX;
+            stateRef.current.y = newY;
+            stateRef.current.lastTouchX = touches[0].pageX;
+            stateRef.current.lastTouchY = touches[0].pageY;
+          }
+        }
+      },
+      onPanResponderRelease: () => {
+        stateRef.current.isPinching = false;
+        stateRef.current.initialDistance = 0;
+      },
+      onPanResponderTerminate: () => {
+        stateRef.current.isPinching = false;
+        stateRef.current.initialDistance = 0;
+      },
     })
   );
 
