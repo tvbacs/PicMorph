@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -42,13 +42,22 @@ import { TextConfigModal } from './src/components/TextConfigModal';
 import { StyleModal } from './src/components/StyleModal';
 import { ExportSuccessModal } from './src/components/ExportSuccessModal';
 import { DraftsModal } from './src/components/DraftsModal';
+import * as SplashScreen from 'expo-splash-screen';
 import { draftService } from './src/services/draftService';
+
+// Giữ splash screen hiển thị cho đến khi React mount thành công
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 // ─── Inner component — dùng useSafeAreaInsets bên trong SafeAreaProvider ────
 function AppContent() {
   const insets = useSafeAreaInsets();
   const viewShotRef = useRef<any>(null);
   const exportViewShotRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Ẩn splash screen mượt mà khi app đã mount xong
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
 
   // Layout & Aspect Ratio States
   const [currentLayout, setCurrentLayout] = useState<LayoutPreset>(LAYOUT_PRESETS[0]);

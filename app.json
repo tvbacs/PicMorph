@@ -7,6 +7,11 @@
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#121214"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tvbacs.picmorph",
@@ -27,6 +32,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-font",
       [
         "expo-image-picker",
         {
