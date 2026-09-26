@@ -49,9 +49,22 @@ export const CellItem: React.FC<CellItemProps> = ({
       ? slot.normY * cellSize.height
       : slot.offsetY || 0;
 
+  const imgW = slot.origWidth || cellSize.width || 1;
+  const imgH = slot.origHeight || cellSize.height || 1;
+  const isRotated90 = Math.abs((slot.rotation || 0) % 180) === 90;
+  const effImgW = isRotated90 ? imgH : imgW;
+  const effImgH = isRotated90 ? imgW : imgH;
+  const imgAspect = effImgH > 0 ? effImgW / effImgH : 1;
+  const cellAspect = cellSize.height > 0 ? cellSize.width / cellSize.height : 1;
+  const autoCoverScale = Math.max(1.0, imgAspect >= cellAspect ? imgAspect / cellAspect : cellAspect / imgAspect);
+
+  const appliedScale = slot.scale && slot.scale !== 1
+    ? slot.scale
+    : (slot.fitMode === 'cover' ? autoCoverScale : 1);
+
   // Compute image transform
   const transform = [
-    { scale: slot.scale || 1 },
+    { scale: appliedScale },
     { translateX },
     { translateY },
     { rotate: `${slot.rotation || 0}deg` },
@@ -79,7 +92,7 @@ export const CellItem: React.FC<CellItemProps> = ({
           <Image
             source={{ uri: slot.uri! }}
             style={[styles.image, { transform }, filterStyle as any]}
-            resizeMode={slot.fitMode || 'contain'}
+            resizeMode="contain"
           />
           {overlays.map((ov) => (
             <View

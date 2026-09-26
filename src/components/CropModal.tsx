@@ -58,7 +58,11 @@ const MiniSlider: React.FC<SliderProps> = ({ value, min, max, color, onChange })
   const pan = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
       onPanResponderGrant: (evt) => {
         const curRatio = (value - min) / range;
         startRef.current = { ratio: curRatio, startX: evt.nativeEvent.pageX };
@@ -189,6 +193,31 @@ export const CropModal: React.FC<CropModalProps> = ({
     lastMidY: 0,
   });
 
+  const lastTapRef = useRef(0);
+  const startTouchPosRef = useRef({ x: 0, y: 0 });
+  const [imageSize, setImageSize] = useState({
+    width: slotData?.origWidth || 0,
+    height: slotData?.origHeight || 0,
+  });
+
+  useEffect(() => {
+    if (visible && slotData?.uri) {
+      if (slotData.origWidth && slotData.origHeight) {
+        setImageSize({ width: slotData.origWidth, height: slotData.origHeight });
+      } else {
+        Image.getSize(
+          slotData.uri,
+          (w, h) => {
+            setImageSize({ width: w, height: h });
+          },
+          () => {
+            setImageSize({ width: frameWidth, height: frameHeight });
+          }
+        );
+      }
+    }
+  }, [visible, slotData?.uri, slotData?.origWidth, slotData?.origHeight, frameWidth, frameHeight]);
+
   useEffect(() => {
     if (visible && slotData) {
       const initScale = slotData.scale || 1;
@@ -247,12 +276,75 @@ export const CropModal: React.FC<CropModalProps> = ({
     };
   };
 
+  const getCoverScale = (rot = rotation): number => {
+    const imgW = imageSize.width > 0 ? imageSize.width : (slotData?.origWidth || frameWidth || 1);
+    const imgH = imageSize.height > 0 ? imageSize.height : (slotData?.origHeight || frameHeight || 1);
+
+    const isRotated90 = Math.abs(rot % 180) === 90;
+    const effImgW = isRotated90 ? imgH : imgW;
+    const effImgH = isRotated90 ? imgW : imgH;
+
+    const imgAspect = effImgH > 0 ? effImgW / effImgH : 1;
+    const frameAspect = frameHeight > 0 ? frameWidth / frameHeight : 1;
+
+    let s = 1.0;
+    if (imgAspect >= frameAspect) {
+      s = imgAspect / frameAspect;
+    } else {
+      s = frameAspect / imgAspect;
+    }
+
+    if (isRotated90 && frameWidth !== frameHeight) {
+      const scaleRatio = Math.max(frameWidth / frameHeight, frameHeight / frameWidth);
+      s = Math.max(s, scaleRatio);
+    }
+
+    return Math.max(1.0, Math.round(s * 100) / 100);
+  };
+
+  const handleFillSlot = () => {
+    const targetScale = getCoverScale();
+    setFitMode('cover');
+    setScale(targetScale);
+    setOffsetX(0);
+    setOffsetY(0);
+    stateRef.current.scale = targetScale;
+    stateRef.current.x = 0;
+    stateRef.current.y = 0;
+  };
+
+  const handleFitSlot = () => {
+    setFitMode('contain');
+    setScale(1.0);
+    setOffsetX(0);
+    setOffsetY(0);
+    stateRef.current.scale = 1.0;
+    stateRef.current.x = 0;
+    stateRef.current.y = 0;
+  };
+
+  const handleRotate90 = () => {
+    const nextRot = (rotation + 90) % 360;
+    setRotation(nextRot);
+    if (scale > 1.05 || fitMode === 'cover') {
+      const nextCover = getCoverScale(nextRot);
+      setScale(nextCover);
+      stateRef.current.scale = nextCover;
+    }
+  };
+
   const panResponderRef = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponderCapture: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponderCapture: () => true,
+      onPanResponderTerminationRequest: () => false,
+      onShouldBlockNativeResponder: () => true,
       onPanResponderGrant: (evt) => {
         const touches = evt.nativeEvent.touches;
+        startTouchPosRef.current = { x: evt.nativeEvent.pageX, y: evt.nativeEvent.pageY };
+
         if (touches && touches.length >= 2) {
           stateRef.current.isPinching = true;
           stateRef.current.initialDistance = getDistance(touches);
@@ -269,16 +361,16 @@ export const CropModal: React.FC<CropModalProps> = ({
       },
       onPanResponderMove: (evt) => {
         const touches = evt.nativeEvent.touches;
-        if (!touches) return;
+        if (!touches || touches.length === 0) return;
 
         if (touches.length >= 2) {
           const currentDist = getDistance(touches);
           const mid = getMidpoint(touches);
 
-          if (!stateRef.current.isPinching || stateRef.current.initialDistance <= 0) {
+          if (!stateRef.current.isPinching || stateRef.current.initialDistance <= 10) {
             // Ngón thứ 2 vừa chạm vào màn hình trong lúc đang thao tác
             stateRef.current.isPinching = true;
-            stateRef.current.initialDistance = currentDist > 0 ? currentDist : 1;
+            stateRef.current.initialDistance = currentDist > 10 ? currentDist : 10;
             stateRef.current.startScale = stateRef.current.scale;
             stateRef.current.lastMidX = mid.x;
             stateRef.current.lastMidY = mid.y;
@@ -324,9 +416,27 @@ export const CropModal: React.FC<CropModalProps> = ({
           }
         }
       },
-      onPanResponderRelease: () => {
+      onPanResponderRelease: (evt) => {
         stateRef.current.isPinching = false;
         stateRef.current.initialDistance = 0;
+
+        // Double-tap toggle giữa 100% (fit) và lấp đầy ô (fill)
+        const now = Date.now();
+        const dx = Math.abs(evt.nativeEvent.pageX - startTouchPosRef.current.x);
+        const dy = Math.abs(evt.nativeEvent.pageY - startTouchPosRef.current.y);
+        const timeSinceLastTap = now - lastTapRef.current;
+
+        if (timeSinceLastTap < 300 && dx < 15 && dy < 15) {
+          const coverS = getCoverScale();
+          if (Math.abs(stateRef.current.scale - 1) < 0.15) {
+            handleFillSlot();
+          } else {
+            handleFitSlot();
+          }
+          lastTapRef.current = 0;
+        } else {
+          lastTapRef.current = now;
+        }
       },
       onPanResponderTerminate: () => {
         stateRef.current.isPinching = false;
@@ -435,15 +545,18 @@ export const CropModal: React.FC<CropModalProps> = ({
           </View>
 
           {/* ── Preview ── */}
-          <View style={styles.previewContainer}>
+          <View
+            style={styles.previewContainer}
+            {...(activeTab === 'crop' ? panResponderRef.current.panHandlers : {})}
+          >
             <View
+              pointerEvents="none"
               style={[styles.previewFrame, { width: frameWidth, height: frameHeight, borderRadius: borderRadius ?? 0 }]}
-              {...(activeTab === 'crop' ? panResponderRef.current.panHandlers : {})}
             >
               <Image
                 source={{ uri: slotData.uri }}
                 style={[styles.previewImage, { transform }, previewFilterStyle as any]}
-                resizeMode={fitMode}
+                resizeMode="contain"
               />
               {/* Overlays for live Warmth, Highlights, Shadows and Presets */}
               {previewOverlays.map((ov) => (
@@ -479,18 +592,40 @@ export const CropModal: React.FC<CropModalProps> = ({
                 <View style={styles.fitModeBar}>
                   <TouchableOpacity
                     style={[styles.fitModeBtn, fitMode === 'contain' && styles.activeFitModeBtn]}
-                    onPress={() => setFitMode('contain')}
+                    onPress={handleFitSlot}
                   >
                     <Ionicons name="scan-outline" size={14} color={fitMode === 'contain' ? '#FFFFFF' : '#A1A1AA'} />
                     <Text style={[styles.fitModeText, fitMode === 'contain' && styles.activeFitModeText]} numberOfLines={1}>Giữ nguyên ảnh</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.fitModeBtn, fitMode === 'cover' && styles.activeFitModeBtn]}
-                    onPress={() => setFitMode('cover')}
+                    onPress={handleFillSlot}
                   >
                     <Ionicons name="expand-outline" size={14} color={fitMode === 'cover' ? '#FFFFFF' : '#A1A1AA'} />
                     <Text style={[styles.fitModeText, fitMode === 'cover' && styles.activeFitModeText]} numberOfLines={1}>Lấp đầy ô</Text>
                   </TouchableOpacity>
+                </View>
+
+                {/* Thu phóng */}
+                <View style={styles.controlGroup}>
+                  <View style={styles.groupHeader}>
+                    <Ionicons name="search-outline" size={18} color="#60A5FA" />
+                    <Text style={styles.groupTitle}>Thu phóng</Text>
+                    <Text style={styles.scaleValueText}>{Math.round(scale * 100)}%</Text>
+                  </View>
+                  <View style={{ paddingLeft: 4, marginBottom: 2 }}>
+                    <MiniSlider
+                      value={Math.round(scale * 100)}
+                      min={50}
+                      max={400}
+                      color="#60A5FA"
+                      onChange={(v) => {
+                        const newS = Math.round(v) / 100;
+                        setScale(newS);
+                        stateRef.current.scale = newS;
+                      }}
+                    />
+                  </View>
                 </View>
 
                 {/* Rotate & Flip */}
@@ -500,7 +635,7 @@ export const CropModal: React.FC<CropModalProps> = ({
                     <Text style={styles.groupTitle}>Xoay & Lật ảnh</Text>
                   </View>
                   <View style={styles.actionButtonsRow}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={() => setRotation((r) => (r + 90) % 360)}>
+                    <TouchableOpacity style={styles.actionBtn} onPress={handleRotate90}>
                       <Ionicons name="reload-outline" size={20} color="#FFFFFF" />
                       <Text style={styles.actionBtnText}>Xoay 90°</Text>
                     </TouchableOpacity>
@@ -697,7 +832,7 @@ const styles = StyleSheet.create({
   tabDot: { position: 'absolute', top: 6, right: 10, width: 7, height: 7, borderRadius: 4, backgroundColor: '#FBBF24', borderWidth: 1.5, borderColor: '#25252D' },
 
   // Preview
-  previewContainer: { alignItems: 'center', marginBottom: 10 },
+  previewContainer: { width: '100%', height: 300, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   previewFrame: { overflow: 'hidden', backgroundColor: '#16161B', borderWidth: 2, borderColor: '#3B82F6', position: 'relative' },
   previewImage: { width: '100%', height: '100%' },
   ruleOfThirdsH1: { position: 'absolute', top: '33.33%', left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.25)' },
@@ -706,10 +841,11 @@ const styles = StyleSheet.create({
   ruleOfThirdsV2: { position: 'absolute', left: '66.66%', top: 0, bottom: 0, width: 1, backgroundColor: 'rgba(255,255,255,0.25)' },
 
   // Controls
-  controlsScroll: { maxHeight: 280 },
+  controlsScroll: { maxHeight: 310 },
   controlGroup: { backgroundColor: '#25252D', borderRadius: 14, padding: 12, marginBottom: 10 },
   groupHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, gap: 6 },
   groupTitle: { color: '#F4F4F5', fontSize: 13, fontWeight: '600', flex: 1 },
+  scaleValueText: { color: '#60A5FA', fontSize: 13, fontWeight: '700' },
   resetMiniText: { color: '#60A5FA', fontSize: 12, fontWeight: '600' },
 
   // Fit mode bar
