@@ -12,6 +12,7 @@ on:
       - 'app.json'
       - 'package.json'
       - 'package-lock.json'
+      - 'babel.config.js'
       - '.github/workflows/build-ios.yml'
 
 jobs:

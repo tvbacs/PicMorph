@@ -99,29 +99,31 @@ function AppContent() {
   const hasContent = slots.some((s) => !!s.uri);
 
   // ─── Fixed-Height Screen Preview Dimensions (Khung cố định, không đẩy thanh công cụ) ───
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-  const headerHeight = 52 + insets.top;
-  const toolbarHeight = 64 + insets.bottom;
+  const { width: windowW, height: windowH } = Dimensions.get('window');
+  const SCREEN_WIDTH = windowW > 0 ? windowW : 375;
+  const SCREEN_HEIGHT = windowH > 0 ? windowH : 812;
+  const headerHeight = 52 + (insets.top || 0);
+  const toolbarHeight = 64 + (insets.bottom || 0);
   // Chiều cao khung preview luôn được cố định chính xác giữa header và toolbar
-  const previewContainerHeight = SCREEN_HEIGHT - headerHeight - toolbarHeight;
-  const availW = SCREEN_WIDTH - 24;
-  const availH = previewContainerHeight - 20;
+  const previewContainerHeight = Math.max(200, SCREEN_HEIGHT - headerHeight - toolbarHeight);
+  const availW = Math.max(100, SCREEN_WIDTH - 24);
+  const availH = Math.max(100, previewContainerHeight - 20);
 
   const selectedRatioConfig =
     ASPECT_RATIOS.find((r) => r.id === currentRatioId) || ASPECT_RATIOS[0];
-  const targetRatio = selectedRatioConfig.ratio; // width / height
+  const targetRatio = selectedRatioConfig.ratio > 0 ? selectedRatioConfig.ratio : 1; // width / height
 
   let canvasDisplayWidth: number;
   let canvasDisplayHeight: number;
 
   if (availW / targetRatio <= availH) {
     // Giới hạn bởi bề ngang (ví dụ ảnh vuông 1:1, ảnh ngang 16:9, 4:3)
-    canvasDisplayWidth = Math.round(availW);
-    canvasDisplayHeight = Math.round(availW / targetRatio);
+    canvasDisplayWidth = Math.max(50, Math.round(availW));
+    canvasDisplayHeight = Math.max(50, Math.round(availW / targetRatio));
   } else {
     // Giới hạn bởi chiều dọc (ví dụ ảnh dọc 9:16, 3:4, 2:3)
-    canvasDisplayHeight = Math.round(availH);
-    canvasDisplayWidth = Math.round(availH * targetRatio);
+    canvasDisplayHeight = Math.max(50, Math.round(availH));
+    canvasDisplayWidth = Math.max(50, Math.round(availH * targetRatio));
   }
 
   // ─── High-Resolution Export Calculations (Chất lượng gốc của ảnh) ────────
@@ -650,42 +652,44 @@ function AppContent() {
         )}
       </View>
 
-      {/* ── 4. Hidden Master High-Res Canvas for True HD/4K Export ── */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: -99999,
-          width: exportDimensions.width,
-          height: exportDimensions.height,
-          opacity: 1,
-        }}
-        pointerEvents="none"
-      >
-        <CollageCanvas
-          ref={exportViewShotRef}
-          layout={currentLayout}
-          slots={slots}
-          canvasStyle={{
-            ...canvasStyle,
-            gap: Math.round(canvasStyle.gap * exportScale),
-            padding: Math.round(canvasStyle.padding * exportScale),
-            borderRadius: Math.round(canvasStyle.borderRadius * exportScale),
+      {/* ── 4. Hidden Master High-Res Canvas for True HD/4K Export (Chỉ render khi xuất ảnh) ── */}
+      {isExporting && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: -99999,
+            width: exportDimensions.width,
+            height: exportDimensions.height,
+            opacity: 1,
           }}
-          texts={texts.map((t) => ({
-            ...t,
-            fontSize: Math.round(t.fontSize * exportScale),
-            letterSpacing: (t.letterSpacing ?? 0.5) * exportScale,
-            x: Math.round((t.x || 0) * exportScale),
-            y: Math.round((t.y || 0) * exportScale),
-          }))}
-          selectedTextId={null}
-          selectedSlotIndex={null}
-          isExporting={true}
-          onSelectSlot={() => {}}
-          onQuickPickSlot={() => {}}
-        />
-      </View>
+          pointerEvents="none"
+        >
+          <CollageCanvas
+            ref={exportViewShotRef}
+            layout={currentLayout}
+            slots={slots}
+            canvasStyle={{
+              ...canvasStyle,
+              gap: Math.round(canvasStyle.gap * exportScale),
+              padding: Math.round(canvasStyle.padding * exportScale),
+              borderRadius: Math.round(canvasStyle.borderRadius * exportScale),
+            }}
+            texts={texts.map((t) => ({
+              ...t,
+              fontSize: Math.round(t.fontSize * exportScale),
+              letterSpacing: (t.letterSpacing ?? 0.5) * exportScale,
+              x: Math.round((t.x || 0) * exportScale),
+              y: Math.round((t.y || 0) * exportScale),
+            }))}
+            selectedTextId={null}
+            selectedSlotIndex={null}
+            isExporting={true}
+            onSelectSlot={() => {}}
+            onQuickPickSlot={() => {}}
+          />
+        </View>
+      )}
 
       {/* ── 5. Modals (Bottom Sheets & Dialogs) ── */}
 
